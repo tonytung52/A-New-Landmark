@@ -1,0 +1,189 @@
+# A-New-Landmark
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>淡江大橋：跨河美學互動簡報</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;500;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #001021; /* 極深藍背景 */
+            color: #E2E8F0;
+            overflow: hidden; /* 簡報模式禁止捲動 */
+        }
+
+        .slide {
+            display: none;
+            height: 100vh;
+            width: 100vw;
+            animation: fadeIn 0.8s ease-in-out;
+        }
+
+        .slide.active {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 確保照片全景不被裁切 */
+        .full-panorama {
+            max-width: 100%;
+            max-height: 75vh;
+            object-fit: contain;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(1.02); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .glass-ui {
+            background: rgba(0, 31, 63, 0.7);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-btn {
+            transition: all 0.3s;
+            color: #FACC15; /* 金黃色高對照文字 */
+        }
+
+        .nav-btn:hover {
+            color: #FFFFFF;
+            text-shadow: 0 0 10px #FACC15;
+        }
+
+        .category-tag {
+            background: linear-gradient(90deg, #1E3A8A, #3B82F6);
+            padding: 4px 16px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            letter-spacing: 0.1em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 頂部進度條 -->
+    <div class="fixed top-0 left-0 w-full h-1 bg-slate-800 z-50">
+        <div id="progress-bar" class="h-full bg-yellow-400 transition-all duration-300" style="width: 0%"></div>
+    </div>
+
+    <!-- 簡報內容容器 -->
+    <div id="presentation">
+        <!-- 核心邏輯將由 JS 自動生成 Slides -->
+    </div>
+
+    <!-- 底部互動控制列 -->
+    <div class="fixed bottom-0 left-0 w-full glass-ui p-6 z-50 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-4">
+            <span id="slide-num" class="text-2xl font-black text-yellow-400">01</span>
+            <div class="h-8 w-[1px] bg-slate-700 hidden md:block"></div>
+            <div>
+                <h3 id="slide-title" class="text-xl font-bold tracking-wide">載入中...</h3>
+                <p id="slide-desc" class="text-sm text-slate-400 font-light">請稍候...</p>
+            </div>
+        </div>
+
+        <div class="flex gap-6 items-center">
+            <button onclick="prevSlide()" class="nav-btn p-3 text-2xl"><i class="fas fa-chevron-left"></i></button>
+            <div class="flex gap-2" id="dots-container"></div>
+            <button onclick="nextSlide()" class="nav-btn p-3 text-2xl"><i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <script>
+        // 圖片資料配置 (請確認路徑與檔名)
+        const slidesData = [
+            { img: 'image.png', cat: '主標題封面', title: '跨越淡江', desc: '探索未來地標：淡江大橋美學紀實' },
+            { img: 'image_2.png', cat: '主標題封面', title: '視野重塑', desc: '串聯北海岸的流線藝術' },
+            
+            { img: 'image_3.png', cat: '淡水端精選', title: '金色水岸視角', desc: '從淡水端望向世界級單塔斜張橋' },
+            { img: 'image_4.png', cat: '淡水端精選', title: '光影交織', desc: '主塔結構與天際線的完美融合' },
+            { img: 'image_5.png', cat: '淡水端精選', title: '晨曦與鋼索', desc: '細膩的結構線條展現工程之美' },
+            { img: 'image_6.png', cat: '淡水端精選', title: '河口守望', desc: '靜止的橋塔，流動的淡水河' },
+            { img: 'image_7.png', cat: '淡水端精選', title: '近觀張力', desc: '札哈·哈蒂流線設計的近距離震撼' },
+            { img: 'image_8.png', cat: '淡水端精選', title: '夕照預備', desc: '等待日落，見證全台最美跨海大橋' },
+            
+            { img: 'image_9.png', cat: '八里端精選', title: '左岸風華', desc: '從八里側感受大橋與生態的共生' },
+            { img: 'image_10.png', cat: '八里端精選', title: '光雕序曲', desc: '夜幕降臨前的藍調時刻' }
+        ];
+
+        let currentIdx = 0;
+
+        function initPresentation() {
+            const container = document.getElementById('presentation');
+            const dots = document.getElementById('dots-container');
+
+            slidesData.forEach((data, i) => {
+                // 生成 Slide
+                const slideDiv = document.createElement('div');
+                slideDiv.className = `slide ${i === 0 ? 'active' : ''}`;
+                slideDiv.id = `slide-${i}`;
+                slideDiv.innerHTML = `
+                    <span class="category-tag mb-6">${data.cat}</span>
+                    <img src="${data.img}" class="full-panorama" alt="${data.title}">
+                `;
+                container.appendChild(slideDiv);
+
+                // 生成小圓點
+                const dot = document.createElement('div');
+                dot.className = `h-2 w-2 rounded-full transition-all duration-300 ${i === 0 ? 'bg-yellow-400 w-8' : 'bg-slate-700'}`;
+                dot.id = `dot-${i}`;
+                dots.appendChild(dot);
+            });
+            updateUI();
+        }
+
+        function updateUI() {
+            const data = slidesData[currentIdx];
+            document.getElementById('slide-num').innerText = (currentIdx + 1).toString().padStart(2, '0');
+            document.getElementById('slide-title').innerText = data.title;
+            document.getElementById('slide-desc').innerText = data.desc;
+            
+            // 更新進度條與圓點
+            const progress = ((currentIdx + 1) / slidesData.length) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+
+            slidesData.forEach((_, i) => {
+                const dot = document.getElementById(`dot-${i}`);
+                if (i === currentIdx) {
+                    dot.className = 'h-2 w-8 bg-yellow-400 rounded-full transition-all duration-300';
+                } else {
+                    dot.className = 'h-2 w-2 bg-slate-700 rounded-full transition-all duration-300';
+                }
+            });
+        }
+
+        function nextSlide() {
+            document.getElementById(`slide-${currentIdx}`).classList.remove('active');
+            currentIdx = (currentIdx + 1) % slidesData.length;
+            document.getElementById(`slide-${currentIdx}`).classList.add('active');
+            updateUI();
+        }
+
+        function prevSlide() {
+            document.getElementById(`slide-${currentIdx}`).classList.remove('active');
+            currentIdx = (currentIdx - 1 + slidesData.length) % slidesData.length;
+            document.getElementById(`slide-${currentIdx}`).classList.add('active');
+            updateUI();
+        }
+
+        // 支援鍵盤左右鍵切換
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide();
+            if (e.key === 'ArrowLeft') prevSlide();
+        });
+
+        initPresentation();
+    </script>
+</body>
+</html>
